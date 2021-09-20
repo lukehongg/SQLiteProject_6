@@ -28,21 +28,24 @@ public class TodoUtil {
 		
 		TodoItem t = new TodoItem(title, desc);
 		list.addItem(t);
+		System.out.println("Item added");
 	}
 
 	public static void deleteItem(TodoList l) {
 		
 		Scanner sc = new Scanner(System.in);
-		String title = sc.next();
+		
 		
 		System.out.println("\n"
 				+ "========== Delete Item Section\n"
 				+ "enter the title of item to remove\n"
 				+ "\n");
 		
+		String title = sc.next();
 		for (TodoItem item : l.getList()) {
 			if (title.equals(item.getTitle())) {
 				l.deleteItem(item);
+				System.out.println("Item removed");
 				break;
 			}
 		}
@@ -69,7 +72,7 @@ public class TodoUtil {
 			System.out.println("title can't be duplicate");
 			return;
 		}
-		
+		sc.nextLine();
 		System.out.println("enter the new description ");
 		String new_description = sc.nextLine().trim();
 		for (TodoItem item : l.getList()) {
@@ -104,13 +107,13 @@ public class TodoUtil {
 				l.addItem(new TodoItem(title, desc, date));
 			}
 			br.close();
-			if(count == 0) System.out.println(filename + "파일이 없습니다.");
+			//if(count == 0) System.out.println(filename + "파일이 없습니다.");
 			if(count != 0) System.out.println(count+"개의 항목을 읽었습니다.");
 			
 		
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println(filename + "파일이 없습니다.");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
