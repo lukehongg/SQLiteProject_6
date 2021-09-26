@@ -43,6 +43,7 @@ public class TodoItem {
         this.current_date = current_date;
     }
     
+    
     public String getTitle() {
         return title;
     }
