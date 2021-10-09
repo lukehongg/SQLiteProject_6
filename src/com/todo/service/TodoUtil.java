@@ -1,6 +1,7 @@
 package com.todo.service;
 
 import java.io.*;
+import java.sql.Connection;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
@@ -9,9 +10,14 @@ import com.todo.dao.TodoList;
 
 public class TodoUtil {
 	
+	Connection conn;
+	public TodoUtil() {
+		//this.list = new ArrayList<TodoItem>();
+		this.conn = DbConnect.getConnection();
+	}
 	public static void createItem(TodoList list) {
 		
-		String title, desc, cate, d_date, current_date;
+		String title, desc, category, d_date, current_date;
 		Scanner sc = new Scanner(System.in);
 		
 		System.out.println("\n"
@@ -19,14 +25,15 @@ public class TodoUtil {
 				+ "enter the title");
 		
 		title = sc.next();
+		
 		if (list.isDuplicate(title)) {
-			System.out.printf("title can't be duplicate");
+			System.out.printf("title can't be duplicate\n");
 			return;
 		}
-		sc.nextLine(); // title 후 남아있는 \n제거
+		
 		System.out.print("enter the category ");
 		
-		cate = sc.next();
+		category = sc.next();
 		sc.nextLine();
 		
 		System.out.print("enter the description");
@@ -38,9 +45,9 @@ public class TodoUtil {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd kk:mm:ss");
 		current_date = sdf.format(new Date());
 		
-		TodoItem t = new TodoItem(title, desc, cate, d_date, current_date);
-		list.addItem(t);
-		System.out.println("Item added");
+		TodoItem t = new TodoItem(title, desc, category, d_date, current_date,0);
+		if(list.addItem(t)>0)
+			System.out.println("Item added");
 	}
 
 	public static void deleteItem(TodoList l) {
@@ -50,15 +57,8 @@ public class TodoUtil {
 				+ "========== Delete Item Section\n"
 				+ "enter the index of item to remove ");
 		int n = sc.nextInt();
-		TodoItem it = l.getItemWithIndex(n);
-		System.out.println(n+". "+ it.toString());
-		System.out.print("위 항목을 삭제하시겠습니까? (y/n) ");
-		String ans = sc.next().trim();
-		if(ans.equals("y")) {
-			l.deleteItem(it);
-			System.out.println("Item removed\n");
-		}
-		else System.out.println("Removal canceled\n");
+		if(l.deleteItem(n) > 0)
+			System.out.println("Item deleted.");
 	}
 	
 	public static void updateItem(TodoList list) {
@@ -67,17 +67,11 @@ public class TodoUtil {
 		System.out.print("========== Edit Item Section\n"
 							+"Enter index of item to edit ");
 		int n = sc.nextInt();
-		TodoItem it = list.getItemWithIndex(n);
-		System.out.println(n + ". " + it.toString());
+		
 		System.out.print("enter the NEW title ");
-		String title = sc.next();
-		if (list.isDuplicate(title)) {
-			System.out.printf("title can't be duplicate");
-			return;
-		}
-		sc.nextLine(); // title 후 남아있는 \n제거
+		String title = sc.next().trim();	
 		System.out.print("enter the NEW category ");
-		String cate = sc.next();
+		String category = sc.next();
 		sc.nextLine();
 		System.out.print("enter the NEW description");
 		String desc = sc.nextLine().trim();
@@ -86,47 +80,61 @@ public class TodoUtil {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd kk:mm:ss");
 		String current_date = sdf.format(new Date());
 		
-		list.deleteItem(it);
-		TodoItem t = new TodoItem(title, desc, cate, d_date, current_date);
-		list.addItem(t);
-		System.out.println("Item updated\n");
+		TodoItem t = new TodoItem(title, desc, category, d_date, current_date, 0);
+		t.setId(n);
+		if(list.editItem(t)>0)
+			System.out.println("Item updated\n");
 	}
 
 	public static void listAll(TodoList l) {
-		System.out.printf("[전체 목록, 총 %d개]\n", l.getListSize());
-		int count=1;
-		for (TodoItem item : l.getList()) {
-			System.out.println(count + ". "+ item.toString());
-			count++;
+		System.out.printf("[전체 목록, 총 %d개]\n", l.getCount());
+		for(TodoItem item: l.getList()) {
+			if(item.getIs_completed() == 1) {
+				System.out.println(item.toString(1));
+			}
+			else System.out.println(item.toString());
+		}
+	}
+	public static void listAll(TodoList l, int comp) {
+		int count=0;
+		for(TodoItem item: l.getList(comp)) {
+			if(item.getIs_completed() == 1) {
+				System.out.println(item.toString(1));
+				count++;
+			}
+		}
+		System.out.printf("\nTotal %d items are completed\n", count);
+	}
+	
+	public static void listAll(TodoList l, String orderby, int ordering) {
+		System.out.printf("[전체 목록, 총 %d개]\n", l.getCount());
+		for(TodoItem item: l.getOrderedList(orderby, ordering)) {
+			System.out.println(item.toString());
 		}
 	}
 	public static void listAllCate(TodoList l) {
-		Set<String> hs = new HashSet<String>();
-		for (TodoItem item : l.getList()) {
-			hs.add(item.getCategory());
+		int count = 0;
+		for(String item: l.getCategories()) {
+			System.out.print(item + " ");
+			count++;
 		}
-		int count=0;
-		if(hs.size()>0) {
-			Iterator it = hs.iterator();
-			while(it.hasNext()) {
-				count++;
-				if(count != hs.size())
-					System.out.print(it.next()+" / ");
-				else System.out.print(it.next());
-
-			}
-			System.out.print("\n");
-		}
+		System.out.printf("\nTotal %d categories found!\n ", count);
 	}
 	
 	public static void findItem(TodoList l, String s) {
 		l.listFind(s);
 	}
-	public static void findItemCate(TodoList l, String s) {
-		l.listFindCate(s);
+	
+	public static void findCateList(TodoList l, String cate) {
+		int count = 0;
+		for(TodoItem item: l.getListCategory(cate)) {
+			System.out.println(item.toString());
+			count++;
+		}
+		System.out.printf("\nTotal %d categories found.\n", count);
 	}
 	
-	
+	/*
 	public static void loadList(TodoList l, String filename) {
 		int count=0;
 		try {
@@ -157,6 +165,8 @@ public class TodoUtil {
 		}
 		
 	}
+	*/
+	/*
 	public static void saveList(TodoList l, String filename) {
 		try {
 			FileWriter fw = new FileWriter(filename);
@@ -168,6 +178,25 @@ public class TodoUtil {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	*/
+
+	public static void findList(TodoList l, String keyword) {
+		// TODO Auto-generated method stub
+		int count = 0;
+		for(TodoItem item: l.getList(keyword)) {
+			System.out.println(item.toString());
+			count++;
+		}
+		System.out.printf("TOTAL %d items found.\n", count);
+		
+	}
+	public static void completeItem(TodoList l, int compIdx) {
+		// TODO Auto-generated method stub
+		if(l.completeItem(compIdx) != 0)
+			System.out.println("Item completeness checked!");
+		else System.out.println("Complete check failed!");
+		
 	}
 	
 	

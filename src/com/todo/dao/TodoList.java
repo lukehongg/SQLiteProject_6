@@ -1,30 +1,169 @@
 package com.todo.dao;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.sql.*;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.*;
 import com.todo.dao.TodoItem;
+import com.todo.service.DbConnect;
 
 import com.todo.service.TodoSortByDate;
 import com.todo.service.TodoSortByName;
 
 public class TodoList {
+	
 	private List<TodoItem> list;
-
+	Connection conn;
+	
 	public TodoList() {
 		this.list = new ArrayList<TodoItem>();
+		this.conn = DbConnect.getConnection();
+	}
+	
+	public ArrayList<TodoItem> getList(){
+		ArrayList<TodoItem> list = new ArrayList<TodoItem>();
+		Statement stmt;
+		
+		try {
+			stmt = conn.createStatement();
+			String sql = "SELECT * FROM list";
+			ResultSet rs = stmt.executeQuery(sql);
+			while(rs.next()) {
+				int id = rs.getInt("id");
+				String category = rs.getString("category");
+				String title = rs.getString("title");
+				String description = rs.getString("desc");
+				String current_date = rs.getString("current_date");
+				String due_date = rs.getString("due_date");
+				int is_comp = rs.getInt("is_complete");
+				TodoItem t = new TodoItem(title, description, category, due_date, current_date, is_comp);
+				t.setId(id);
+				list.add(t);
+				
+			}
+			stmt.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return list;
+	}
+	
+	public ArrayList<TodoItem> getList(int comp) {
+		// TODO Auto-generated method stub
+		ArrayList<TodoItem> list = new ArrayList<TodoItem>();
+		Statement stmt;
+		
+		try {
+			stmt = conn.createStatement();
+			String sql = "SELECT * FROM list WHERE is_complete = 1;";
+			ResultSet rs = stmt.executeQuery(sql);
+			while(rs.next()) {
+				int id = rs.getInt("id");
+				String category = rs.getString("category");
+				String title = rs.getString("title");
+				String description = rs.getString("desc");
+				String current_date = rs.getString("current_date");
+				String due_date = rs.getString("due_date");
+				int is_comp = rs.getInt("is_complete");
+				TodoItem t = new TodoItem(title, description, category, due_date, current_date, is_comp);
+				t.setId(id);
+				list.add(t);
+				
+			}
+			stmt.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return list;
+	}
+	
+	public int getCount() {
+		Statement stmt;
+		int count = 0;
+		try {
+			stmt = conn.createStatement();
+			String sql = "SELECT count(id) FROM list;";
+			ResultSet rs = stmt.executeQuery(sql);
+			rs.next();
+			count = rs.getInt("count(id)");
+			stmt.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return count;
 	}
 
-	public void addItem(TodoItem t) {
-		list.add(t);
+	public int addItem(TodoItem t) {
+		String sql = "insert into list (title, desc, category, current_date, due_date)"
+					+ " values (?,?,?,?,?);";
+		PreparedStatement pstmt;
+		int count = 0;
+		try {
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, t.getTitle());
+			pstmt.setString(2, t.getDesc());
+			pstmt.setString(3, t.getCategory());
+			pstmt.setString(4, t.getCurrent_date());
+			pstmt.setString(5, t.getDue_date());
+			count = pstmt.executeUpdate();
+			pstmt.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return count;
+		
 	}
 
-	public void deleteItem(TodoItem t) {
-		list.remove(t);
+	public int deleteItem(int index) {
+		PreparedStatement pstmt;
+		int count = 0;
+		
+		try {
+
+			String sql = "delete from list where id=?;";
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(1, index);
+			count = pstmt.executeUpdate();
+			pstmt.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
+		return count;
 	}
 
-	void editItem(TodoItem t, TodoItem updated) {
-		int index = list.indexOf(t);
-		list.remove(index);
-		list.add(updated);
+	public int editItem(TodoItem t) {
+		String sql = "update list set tItle=?, desc=?, category=?, current_date=?, due_date=?"
+					+ " where id=?;";
+		PreparedStatement pstmt;
+		int count = 0;
+		try {
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, t.getTitle());
+			pstmt.setString(2, t.getDesc());
+			pstmt.setString(3, t.getCategory());
+			pstmt.setString(4, t.getCurrent_date());
+			pstmt.setString(5, t.getDue_date());
+			pstmt.setInt(6, t.getId());
+			count = pstmt.executeUpdate();
+			pstmt.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return count;
 	}
 	
 	public TodoItem getItemWithIndex(int n) {
@@ -33,9 +172,6 @@ public class TodoList {
 		return it; 
 	}
 
-	public ArrayList<TodoItem> getList() {
-		return new ArrayList<TodoItem>(list);
-	}
 	
 	public int getListSize() {
 		return list.size();
@@ -55,6 +191,7 @@ public class TodoList {
 			count++;
 		}
 	}
+	
 	public void listFind(String s) {
 		int count=0;
 		TodoItem temp;
@@ -73,6 +210,7 @@ public class TodoList {
 		}
 		System.out.println("총 "+ count+"개의 항목을 찾았습니다.\n");
 	}
+	
 	public void listFindCate(String s) {
 		int count=0;
 		TodoItem temp;
@@ -99,9 +237,195 @@ public class TodoList {
 	}
 
 	public Boolean isDuplicate(String title) {
-		for (TodoItem item : list) {
-			if (title.equals(item.getTitle())) return true;
-		}
-		return false;
+			Statement stmt;
+			int dup = 0;
+			try {
+				stmt = conn.createStatement();
+				String sql = "SELECT count(id) FROM list WHERE title = '"+title+"';";
+				ResultSet rs = stmt.executeQuery(sql);
+				rs.next();
+				dup = rs.getInt("count(id)");
+				stmt.close();
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if(dup>0) return true;
+			return false;
 	}
+	public void importData(String filename) {
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(filename));
+			String line;
+			String sql = "insert into list (title, desc, category, current_date, due_date)"
+						+ " values (?,?,?,?,?);";
+			int records = 0;
+			
+			while((line = br.readLine()) != null) {
+				StringTokenizer st = new StringTokenizer(line, "##");
+				String category = st.nextToken();
+				String title = st.nextToken();
+				String description = st.nextToken();
+				String due_date = st.nextToken();
+				String current_date = st.nextToken();
+				
+				PreparedStatement pstmt = conn.prepareStatement(sql);
+				pstmt.setString(1, title);
+				pstmt.setString(2, description);
+				pstmt.setString(3, category);
+				pstmt.setString(4, current_date);
+				pstmt.setString(5, due_date);
+				int count = pstmt.executeUpdate();
+				if(count>0) records++;
+				pstmt.close();
+				
+			}
+			System.out.println(records + " records read!");
+			br.close();
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+	public ArrayList<TodoItem> getList(String keyword) {
+		// TODO Auto-generated method stub
+		ArrayList<TodoItem> list = new ArrayList<TodoItem>();
+		PreparedStatement pstmt;
+		keyword = "%" + keyword + "%";
+		String sql = "SELECT * FROM list WHERE title like ? or desc like ?";
+		try {
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, keyword);
+			pstmt.setString(2, keyword);
+			ResultSet rs = pstmt.executeQuery();
+			while(rs.next()) {
+				int id = rs.getInt("id");
+				String category = rs.getString("category");
+				String title = rs.getString("title");
+				String description = rs.getString("desc");
+				String current_date = rs.getString("current_date");
+				String due_date = rs.getString("due_date");
+				TodoItem t = new TodoItem(title, description, category, due_date, current_date,0);
+				t.setId(id);
+				list.add(t);
+			}
+			pstmt.close();
+			rs.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return list;
+		
+	}
+
+	public ArrayList<String> getCategories() {
+		// TODO Auto-generated method stub
+		ArrayList<String> list= new ArrayList<String>();
+		Statement stmt;
+		String sql = "SELECT DISTINCT category FROM list;";
+		
+		try {
+			stmt = conn.createStatement();
+			ResultSet rs = stmt.executeQuery(sql);
+			while(rs.next()) {
+				list.add(rs.getString("category"));
+			}
+
+			stmt.close();
+			rs.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		return list;
+	}
+
+	public ArrayList<TodoItem> getListCategory(String keyword) {
+		// TODO Auto-generated method stub
+		ArrayList<TodoItem> list = new ArrayList<TodoItem>();
+		PreparedStatement pstmt;
+		String sql = "SELECT * FROM list where category = ?;";
+		try {
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, keyword);
+			ResultSet rs = pstmt.executeQuery();
+			while(rs.next()) {
+				int id = rs.getInt("id");
+				String category = rs.getString("category");
+				String title = rs.getString("title");
+				String description = rs.getString("desc");
+				String current_date = rs.getString("current_date");
+				String due_date = rs.getString("due_date");
+				TodoItem t = new TodoItem(title, description, category, due_date, current_date,0);
+				t.setId(id);
+				list.add(t);	
+			}
+			pstmt.close();
+			rs.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return list;
+	}
+	
+	public ArrayList<TodoItem> getOrderedList(String orderby, int ordering){
+		ArrayList<TodoItem> list = new ArrayList<TodoItem>();
+		Statement stmt;
+		String sql = "Select * FROM list ORDER By " + orderby;
+		try {
+			stmt = conn.createStatement();
+			if(ordering == 0) {
+				sql +=" desc";
+			}
+			ResultSet rs = stmt.executeQuery(sql);
+			while(rs.next()) {
+				int id = rs.getInt("id");
+				String category = rs.getString("category");
+				String title = rs.getString("title");
+				String description = rs.getString("desc");
+				String current_date = rs.getString("current_date");
+				String due_date = rs.getString("due_date");
+				TodoItem t = new TodoItem(title, description, category, due_date, current_date,0);
+				t.setId(id);
+				list.add(t);	
+			}
+			stmt.close();
+			rs.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return list;
+	}
+
+	public int completeItem(int compIdx) {
+		// TODO Auto-generated method stub
+		PreparedStatement pstmt;
+		int result=0;
+		try {
+			String sql = "update list set is_complete = 1 where id = ?;";
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(1, compIdx);
+			result = pstmt.executeUpdate();
+			pstmt.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	
+	
+	
 }

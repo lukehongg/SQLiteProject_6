@@ -1,5 +1,6 @@
 package com.todo;
 
+import java.sql.*;
 import java.util.Scanner;
 
 import com.todo.dao.TodoList;
@@ -9,13 +10,13 @@ import com.todo.service.TodoUtil;
 public class TodoMain {
 	
 	public static void start() {
+		
 	
 		Scanner sc = new Scanner(System.in);
 		TodoList l = new TodoList();
+		l.importData("todoList.txt");
 		boolean isList = false;
 		boolean quit = false;
-		
-		TodoUtil.loadList(l,"todoList.txt");
 		Menu.displaymenu();
 		
 		do {
@@ -26,6 +27,11 @@ public class TodoMain {
 
 			case "add":
 				TodoUtil.createItem(l);
+				break;
+				
+			case "comp":
+				int compIdx = sc.nextInt();
+				TodoUtil.completeItem(l, compIdx);
 				break;
 			
 			case "del":
@@ -44,39 +50,40 @@ public class TodoMain {
 				TodoUtil.listAllCate(l);
 				break;
 				
+			case "ls_comp":
+				TodoUtil.listAll(l, 1);
+				break;
+				
 			case "find":
-				String temp = sc.next();
-				TodoUtil.findItem(l, temp);
+				String keyword = sc.nextLine().trim();
+				TodoUtil.findList(l, keyword);
 				break;
 				
 			case "find_cate":
-				String t = sc.next();
-				TodoUtil.findItemCate(l, t);
+				String cate = sc.nextLine().trim();
+				TodoUtil.findCateList(l, cate);
 				break;
 				
-			case "ls_name_asc":
-				l.sortByName();
-				isList = true;
+			case "ls_name":
+				System.out.println("Ordered by title in ascending.");
+				TodoUtil.listAll(l, "title", 1);
 				break;
 
 			case "ls_name_desc":
-				l.sortByName();
-				l.reverseList();
-				isList = true;
+				System.out.println("Ordered by title in descending.");
+				TodoUtil.listAll(l, "title", 0);
 				break;
 				
 			case "ls_date":
-				l.sortByDate();
-				isList = true;
+				System.out.println("Ordered by due_date in ascending.");
+				TodoUtil.listAll(l, "due_date", 1);
 				break;
 
 			case "ls_date_desc":
-				l.sortByDate();
-				l.reverseList();
-				isList = true;
+				System.out.println("Ordered by due_date in descending.");
+				TodoUtil.listAll(l, "due_date", 0);
 				break;
 	
-				
 			case "help":	
 				Menu.displaymenu();
 				break;
@@ -90,8 +97,8 @@ public class TodoMain {
 				break;
 			}
 			
-			if(isList) l.listAll();
+			//if(isList) l.listAll();
 		} while (!quit);
-		TodoUtil.saveList(l,"todoList.txt");
+		//TodoUtil.saveList(l,"todoList.txt");
 	}
 }
