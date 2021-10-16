@@ -11,6 +11,8 @@ public class TodoItem {
     private String category;
     private String due_date;
     private int is_completed;
+    private int first_priority;
+    private String place;
 
 
     public int getIs_completed() {
@@ -32,24 +34,15 @@ public class TodoItem {
 		this.due_date = due_date;
 	}
 	public TodoItem() {}
-	public TodoItem(String title, String desc){
-        this.title=title;
-        this.desc=desc;
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd kk:mm:ss");
-        this.current_date = sdf.format(new Date());
-    }
-    public TodoItem(String title, String desc, String current_date) {
-    	this.title=title;
-        this.desc=desc;
-        this.current_date = current_date;
-    }
-    public TodoItem(String title, String desc, String cate, String due_date, String current_date, int is_comp) {
+    public TodoItem(String title, String desc, String cate, String due_date, String current_date, int is_comp, int first_priority, String place) {
     	this.title=title;
         this.desc=desc;
         this.category = cate;
         this.due_date = due_date;
         this.current_date = current_date;
         this.is_completed = is_comp;
+        this.first_priority = first_priority;
+        this.place = place;
     }
     
     
@@ -79,23 +72,48 @@ public class TodoItem {
     
     @Override
     public String toString() {
-    	return id+ ". "+"[" + category + "] " + "["+title+"] "+"["+desc+"]"+"["+due_date+"]"
+    	String temp = title;
+    	if(first_priority == 1) {
+    		temp = "*"+temp;
+    	}
+    	else temp = " "+temp;
+    	if(is_completed == 1) 
+    		return "[V]"+ id+ ". "+"[" + category + "] " + "["+temp+"] "+"["+place+"] "+"["+desc+"]"+"["+due_date+"]"
+        			+"["+current_date+"]";
+    	else
+    		return "[ ]"+ id+ ". "+"[" + category + "] " + "["+temp+"] "+"["+place+"] "+"["+desc+"]"+"["+due_date+"]"
     			+"["+current_date+"]";
     }
-    public String toString(int comp) {
-    	return id+ ". "+"[" + category + "] " + "[V]["+title+"] "+"["+desc+"]"+"["+due_date+"]"
-    			+"["+current_date+"]";
-    }
-    public String toSaveString() {
-    	return category + "##" +title+"##"+desc+"##"+due_date+"##"
-    			+current_date+"\n";
-    }
+    public String toStringToday() {		
+		// TODO Auto-generated method stub
+    	String temp = category;
+    	if(first_priority == 1) {
+    		temp = "*"+temp;
+    	}
+    	else temp = " " + temp;
+    	if(is_completed == 1) 
+    		return "[V]"+id+ ". [" + temp + "] " + place + "에서 " + desc;
+    	else
+    		return "[ ]"+id+ ". [" + temp + "] " + place + "에서 " + desc;
+	}
 	public void setId(int id) {
 		// TODO Auto-generated method stub
 		this.id = id;
-		
 	}
 	public int getId() {
 		return this.id;
 	}
+	public int getFirst_priority() {
+		return first_priority;
+	}
+	public void setFirst_priority(int first_priority) {
+		this.first_priority = first_priority;
+	}
+	public String getPlace() {
+		return place;
+	}
+	public void setPlace(String place) {
+		this.place = place;
+	}
+	
 }

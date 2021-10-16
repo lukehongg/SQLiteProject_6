@@ -14,7 +14,7 @@ public class TodoMain {
 	
 		Scanner sc = new Scanner(System.in);
 		TodoList l = new TodoList();
-		l.importData("todoList.txt");
+		//l.importData("todoList.txt");
 		boolean isList = false;
 		boolean quit = false;
 		Menu.displaymenu();
@@ -33,9 +33,17 @@ public class TodoMain {
 				int compIdx = sc.nextInt();
 				TodoUtil.completeItem(l, compIdx);
 				break;
+				
+			case "Mcomp":
+				TodoUtil.completeItemP(l);
+				break;
 			
 			case "del":
 				TodoUtil.deleteItem(l);
+				break;
+			
+			case "Mdel":
+				TodoUtil.multiDelete(l);
 				break;
 				
 			case "edit":
@@ -83,6 +91,27 @@ public class TodoMain {
 				System.out.println("Ordered by due_date in descending.");
 				TodoUtil.listAll(l, "due_date", 0);
 				break;
+				
+			case "prio":
+				int Idx = sc.nextInt();
+				TodoUtil.setPriority(l, Idx);
+				break;
+				
+			case "Mprio":
+				TodoUtil.setPriorityP(l);
+				break;
+			
+			case "ls_prio":
+				TodoUtil.listAllP(l);
+				break;
+				
+			case "today":
+				TodoUtil.todaylists(l);
+				break;
+				
+			case "monthly":
+				TodoUtil.addMonthly(l);
+				break;
 	
 			case "help":	
 				Menu.displaymenu();
@@ -97,8 +126,9 @@ public class TodoMain {
 				break;
 			}
 			
-			//if(isList) l.listAll();
+			
 		} while (!quit);
-		//TodoUtil.saveList(l,"todoList.txt");
+		
+	System.out.println("Program ENDED");
 	}
 }
